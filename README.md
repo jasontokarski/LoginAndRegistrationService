@@ -15,7 +15,7 @@ This service uses Gradle for depedency management and building the application. 
 Verify a SQL server is running along with proper credentials within application.properties before building or starting the application. After running the Spring Boot application, two endpoints are available. One for authentication the user and another registering new users.
 
 ### Prerequisites
-MySQL Server
+#### MySQL Server
 Download [MySQL Server 8](https://dev.mysql.com/downloads/mysql/)
 * Login to your MySQL server and run the following commands
 ```mysql
@@ -25,7 +25,7 @@ USE login_app;
 GRANT ALL PRIVILEGES ON login_app.* TO 'rootuser'@'%';
 ```
 
-JWT Provider
+#### JWT Provider
 This application works in conjunction with JSON Web Token microservice for verifying user identity.
 Download [JWT Provider](https://github.com/jasontokarski/JwtProvider)
 * Configuration details are provided within the repository.
