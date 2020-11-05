@@ -14,7 +14,7 @@ This application was written in Java.
 This service uses Gradle for depedency management and building the application. A MySQL or other RDBMS SQL server is required in order for account information to be persisted.
 Verify a SQL server is running along with proper credentials within application.properties before building or starting the application. After running the Spring Boot application, two endpoints are available. One for authentication the user and another registering new users.
 
-### Prerequisites
+## Prerequisites
 #### MySQL Server
 Download [MySQL Server 8](https://dev.mysql.com/downloads/mysql/)
 * Login to your MySQL server and run the following commands
