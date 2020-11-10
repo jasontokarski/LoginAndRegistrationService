@@ -1,5 +1,7 @@
 package com.loginform.service;
 
+import java.time.Clock;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import de.mkammerer.argon2.Argon2;
 import reactor.core.publisher.Mono;
 
 import com.loginform.repository.*;
@@ -26,6 +29,12 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private Argon2 argon2;
+
+    @Autowired
+    private Clock clock;
+
     @Value("${jwt.hostname}")
     private String jwtHostName;
 
@@ -36,7 +45,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Optional<UserEntity> findByUserName(String userName) {
-        return userRepository.findByUserName(userName);
+        Optional<UserEntity> result = userRepository.findByUserName(userName);
+        return result;
     }
 
     @Override
@@ -68,8 +78,8 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    public Boolean validatePassword(UserEntity user) {
-        return findByUserName(user.getUserName()).get().getPassword().equals(user.getPassword());
+    public Boolean validatePassword(String username, String password) {
+        return argon2.verify(findByUserName(username).get().getPassword(), password.toCharArray());
     }
 
     @Override
@@ -80,8 +90,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<ResponseEntity<TokenEntity>> buildCredentialEntity(UserEntity user) {
         Optional<UserEntity> returnedUser = userRepository.findByUserName(user.getUserName());
-        CredentialEntity credentialEntity = new CredentialEntity(user.getUserName(), null, generateApiKey());
         if(!returnedUser.isPresent()) {
+            CredentialEntity credentialEntity = new CredentialEntity(user.getUserName(), null, generateApiKey());
+            Utils.hashPass(user, argon2);
             return WebClient.builder()
                 .baseUrl(jwtHostName)
                 .build()
@@ -96,6 +107,7 @@ public class UserServiceImpl implements UserService {
                     credentialEntity.setToken(response.getBody().getToken());
                     credentialEntity.setUserEntity(user);
                     user.setCredentialEntity(credentialEntity);
+                    user.setCreationDate(new Date(clock.instant().toEpochMilli()));
                     userRepository.save(user);
                 })
                 .doOnError(error -> {

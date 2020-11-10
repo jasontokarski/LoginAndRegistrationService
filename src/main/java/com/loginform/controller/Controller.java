@@ -1,5 +1,6 @@
 package com.loginform.controller;
 
+import com.loginform.model.LoginEntity;
 import com.loginform.model.StatusEntity;
 import com.loginform.model.TokenEntity;
 import com.loginform.model.UserEntity;
@@ -26,11 +27,11 @@ public class Controller {
     TokenEntity tokenEntity;
 
     @PostMapping(value = "/login", headers = "Accept=application/json")
-    public ResponseEntity<?> validateLogin(@RequestBody UserEntity user) {
-        if (userService.validateUserNameExists(user.getUserName())) {
+    public ResponseEntity<?> validateLogin(@RequestBody LoginEntity login) {
+        if (!userService.validateUserNameExists(login.getUserName())) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        if (userService.validatePassword(user)) {
+        if (userService.validatePassword(login.getUserName(), login.getPassword())) {
             return new ResponseEntity<>(HttpStatus.FOUND);
         }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

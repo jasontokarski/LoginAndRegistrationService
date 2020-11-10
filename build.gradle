@@ -20,6 +20,7 @@ dependencies {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
 	compile group: 'mysql', name: 'mysql-connector-java', version: '8.0.21'
+	compile 'de.mkammerer:argon2-jvm:2.7'
 }
 
 task printClasspath {

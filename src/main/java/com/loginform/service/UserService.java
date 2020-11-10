@@ -27,7 +27,7 @@ public interface UserService {
 
     Boolean validateEmailExists(String email); 
     
-    Boolean validatePassword(UserEntity user);
+    Boolean validatePassword(String username, String password);
 
     String generateApiKey();
 
