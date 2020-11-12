@@ -117,4 +117,24 @@ public class UserServiceImpl implements UserService {
             return Mono.error(new RuntimeException("User does not exist!"));
         }
     }
+
+    @Override
+    public Mono<ResponseEntity<TokenEntity>> retrieveToken(String userName) {
+        return WebClient.builder()
+        .baseUrl(jwtHostName)
+        .build()
+        .post()
+        .uri("/jwt/request")
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON)
+        .body(BodyInserters.fromValue(new CredentialEntity(userName, null, findByUserName(userName).get().getCredentialEntity().getApiKey())))
+        .retrieve()
+        .toEntity(TokenEntity.class)
+        .doOnSuccess(response -> {
+            response.getBody().getStatusEntity().setStatus("Login successful.");
+        })
+        .doOnError(error -> {
+            error.printStackTrace();
+        });
+    }
 }

@@ -27,14 +27,15 @@ public class Controller {
     TokenEntity tokenEntity;
 
     @PostMapping(value = "/login", headers = "Accept=application/json")
-    public ResponseEntity<?> validateLogin(@RequestBody LoginEntity login) {
+    public Mono<?> validateLogin(@RequestBody LoginEntity login) {
         if (!userService.validateUserNameExists(login.getUserName())) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+           return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON));
         }
         if (userService.validatePassword(login.getUserName(), login.getPassword())) {
-            return new ResponseEntity<>(HttpStatus.FOUND);
+            Mono<ResponseEntity<TokenEntity>> credential = userService.retrieveToken(login.getUserName());
+            return credential;
         }
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON));
     }
 
     @PostMapping(value = "/register", headers = "Accept=application/json")

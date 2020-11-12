@@ -32,4 +32,6 @@ public interface UserService {
     String generateApiKey();
 
     Mono<ResponseEntity<TokenEntity>> buildCredentialEntity(UserEntity user);
+
+    public Mono<ResponseEntity<TokenEntity>> retrieveToken(String userName);
 }
