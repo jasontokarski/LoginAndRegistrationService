@@ -2,44 +2,51 @@ package com.loginform.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.UniqueConstraint;
+import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 import org.springframework.data.annotation.CreatedDate;
 
 @Entity
-@Table(name = "user_entity", uniqueConstraints = @UniqueConstraint(columnNames = {"user_name", "email"}))
+@Table(name = "users", uniqueConstraints = @UniqueConstraint(columnNames = {"username", "email"}))
 public class UserEntity implements Serializable {
 
-    private static final long serialVersionUID = -6295869253157269670L;
+    private static final long serialVersionUid = -6295869253157269670L;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "user_guid")
-    private Long userGuid;
-    
-    @Column(name = "user_name", unique = true)
-    private String userName;
-    
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank
+    @Size(max = 20)
+    @Column(name = "username")
+    private String username;
+
+    @NotBlank
+    @Size(max = 20)
     @Column(name = "password")
     private String password;
+
+    @NotBlank
+    @Size(max = 20)
     @Column(name = "first_name")
     private String firstName;
+
+    @NotBlank
+    @Size(max = 20)
     @Column(name = "last_name")
     private String lastName;
-    @Column(name = "email", unique = true)
+
+    @NotBlank
+    @Size(max = 30)
+    @Email
+    @Column(name = "email")
     private String email;
     
     @Temporal(TemporalType.TIMESTAMP)
@@ -47,16 +54,17 @@ public class UserEntity implements Serializable {
     @Column(name="creation_date")
     private Date creationDate;
 
-    @OneToOne(cascade = CascadeType.ALL, mappedBy="userEntity")
-    @PrimaryKeyJoinColumn
-    private CredentialEntity credentialEntity;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(	name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<RoleEntity> roleEntities = new HashSet<>();
     
     public UserEntity() {
     }
 
-    public UserEntity(Long userGuid, String userName, String password, String firstName, String lastName, String email, Date creationDate) {
-        this.userGuid = userGuid;
-        this.userName = userName;
+    public UserEntity(String username, String password, String firstName, String lastName, String email, Date creationDate) {
+        this.username = username;
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -64,20 +72,20 @@ public class UserEntity implements Serializable {
         this.creationDate = creationDate;
     }
 
-    public Long getUserGuid() {
-        return this.userGuid;
+    public Long getId() {
+        return this.id;
     }
 
-    public void setUserGuid(Long userGuid) {
-        this.userGuid = userGuid;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public String getUserName() {
-        return this.userName;
+    public String getUsername() {
+        return this.username;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUserName(String username) {
+        this.username = username;
     }
 
     public String getPassword() {
@@ -120,13 +128,21 @@ public class UserEntity implements Serializable {
         this.creationDate = creationDate;
     }
 
-    public UserEntity userGuid(Long userGuid) {
-        this.userGuid = userGuid;
+    public Set<RoleEntity> getRoleEntities() {
+        return roleEntities;
+    }
+
+    public void setRoleEntities(Set<RoleEntity> roleEntities) {
+        this.roleEntities = roleEntities;
+    }
+
+    public UserEntity id(Long id) {
+        this.id = id;
         return this;
     }
 
-    public UserEntity userName(String userName) {
-        this.userName = userName;
+    public UserEntity userName(String username) {
+        this.username = username;
         return this;
     }
 
@@ -163,19 +179,19 @@ public class UserEntity implements Serializable {
             return false;
         }
         UserEntity userEntity = (UserEntity) o;
-        return Objects.equals(userGuid, userEntity.userGuid) && Objects.equals(userName, userEntity.userName) && Objects.equals(password, userEntity.password) && Objects.equals(firstName, userEntity.firstName) && Objects.equals(lastName, userEntity.lastName) && Objects.equals(email, userEntity.email) && Objects.equals(creationDate, userEntity.creationDate);
+        return Objects.equals(id, userEntity.id) && Objects.equals(username, userEntity.username) && Objects.equals(password, userEntity.password) && Objects.equals(firstName, userEntity.firstName) && Objects.equals(lastName, userEntity.lastName) && Objects.equals(email, userEntity.email) && Objects.equals(creationDate, userEntity.creationDate);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userGuid, userName, password, firstName, lastName, email, creationDate);
+        return Objects.hash(id, username, password, firstName, lastName, email, creationDate);
     }
 
     @Override
     public String toString() {
         return "{" +
-            " userGuid='" + getUserGuid() + "'" +
-            ", userName='" + getUserName() + "'" +
+            " id='" + getId() + "'" +
+            ", userName='" + getUsername() + "'" +
             ", password='" + getPassword() + "'" +
             ", firstName='" + getFirstName() + "'" +
             ", lastName='" + getLastName() + "'" +
@@ -183,14 +199,5 @@ public class UserEntity implements Serializable {
             ", creationDate='" + getCreationDate() + "'" +
             "}";
     }
-
-    public CredentialEntity getCredentialEntity() {
-        return credentialEntity;
-    }
-
-    public void setCredentialEntity(CredentialEntity credentialEntity) {
-        this.credentialEntity = credentialEntity;
-    }
- 
 
 }

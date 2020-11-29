@@ -2,36 +2,24 @@ package com.loginform.service;
 
 import java.util.List;
 import java.util.Optional;
-
-import com.loginform.model.TokenEntity;
 import com.loginform.model.UserEntity;
 
-import org.springframework.http.ResponseEntity;
-
-import reactor.core.publisher.Mono;
-
 public interface UserService {
-    List <UserEntity> findAll();
+    List<UserEntity> findAll();
 
     void save(UserEntity user);
 
-    Optional <UserEntity> findById(Long id);
+    Optional<UserEntity> findById(Long Id);
 
-    Optional <UserEntity> findByUserName(String userName);
+    Optional<UserEntity> findByUsername(String username);
 
-    Optional <UserEntity> findByEmail(String email);
+    Optional<UserEntity> findByEmail(String email);
 
-    void delete(long id);
+    void delete(Long Id);
 
-    Boolean validateUserNameExists(String userName); 
+    Boolean usernameExists(String username);
 
-    Boolean validateEmailExists(String email); 
-    
-    Boolean validatePassword(String username, String password);
+    Boolean emailExists(String email);
 
     String generateApiKey();
-
-    Mono<ResponseEntity<TokenEntity>> buildCredentialEntity(UserEntity user);
-
-    public Mono<ResponseEntity<TokenEntity>> retrieveToken(String userName);
 }

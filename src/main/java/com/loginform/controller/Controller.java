@@ -1,52 +1,97 @@
 package com.loginform.controller;
 
-import com.loginform.model.LoginEntity;
-import com.loginform.model.StatusEntity;
-import com.loginform.model.TokenEntity;
+import com.loginform.dto.AuthenticationResponse;
+import com.loginform.dto.LoginRequest;
+import com.loginform.dto.RegistrationRequest;
+import com.loginform.exception.AppException;
+import com.loginform.dto.ApiResponse;
+import com.loginform.model.RoleEntity;
+import com.loginform.model.RoleName;
 import com.loginform.model.UserEntity;
+import com.loginform.repository.RoleRepository;
+import com.loginform.service.JwtService;
 import com.loginform.service.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import reactor.core.publisher.Mono;
+import javax.validation.Valid;
+import java.time.Clock;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @RestController
+@RequestMapping("/api/auth")
 public class Controller {
 
     @Autowired
     private UserService userService;
 
-    StatusEntity statusEntity;
+    @Autowired
+    private JwtService jwtService;
 
-    TokenEntity tokenEntity;
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private Clock clock;
 
     @PostMapping(value = "/login", headers = "Accept=application/json")
-    public Mono<?> validateLogin(@RequestBody LoginEntity login) {
-        if (!userService.validateUserNameExists(login.getUserName())) {
-           return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON));
-        }
-        if (userService.validatePassword(login.getUserName(), login.getPassword())) {
-            Mono<ResponseEntity<TokenEntity>> credential = userService.retrieveToken(login.getUserName());
-            return credential;
-        }
-        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON));
+    public ResponseEntity<?> validateLogin(@Valid @RequestBody LoginRequest loginRequest) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getUsername(),
+                        loginRequest.getPassword()
+                )
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        String jwt = jwtService.createToken(authentication);
+        return ResponseEntity.ok(new AuthenticationResponse(jwt));
     }
 
     @PostMapping(value = "/register", headers = "Accept=application/json")
-    public Mono<?> registerUser(@RequestBody UserEntity user) {
-        if (userService.validateUserNameExists(user.getUserName()) || userService.validateEmailExists(user.getEmail())) {
-            statusEntity = new StatusEntity("Username or email already exists.", 0, 0);
-            return Mono.just(ResponseEntity.status(HttpStatus.CONFLICT).contentType(MediaType.APPLICATION_JSON).body(statusEntity));
-        } else {
-            Mono<ResponseEntity<TokenEntity>> credential = userService.buildCredentialEntity(user);
-            return credential;
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegistrationRequest registrationRequest) {
+        if (userService.usernameExists(registrationRequest.getUsername())) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Username already exists."));
         }
+        if(userService.emailExists(registrationRequest.getEmail())) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Email already exists."));
+        }
+
+        UserEntity userEntity = new UserEntity(registrationRequest.getUsername(),
+                passwordEncoder.encode(registrationRequest.getPassword()),
+                registrationRequest.getFirstName(),
+                registrationRequest.getLastName(),
+                registrationRequest.getEmail(),
+                new Date(clock.instant().toEpochMilli()));
+
+        RoleEntity roleEntity = roleRepository.findByName(RoleName.ROLE_USER)
+                .orElseThrow(() -> new AppException("User Role not set."));
+
+        Set<RoleEntity> roleEntitySet = new HashSet<>();
+        roleEntitySet.add(roleEntity);
+        userEntity.setRoleEntities(roleEntitySet);
+
+        userService.save(userEntity);
+        return ResponseEntity.ok(new ApiResponse(true, "Registration successful."));
     }
     
 }
